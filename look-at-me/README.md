@@ -17,3 +17,5 @@ then:
 ```sh
 paseo plugin add git:bg172/paseo-plugins --path look-at-me
 ```
+
+Pair it with Ben Klingner's notification-sounds plugin for an audible ding alongside the green circle: `paseo plugin add benklingner/notification-sounds` (https://github.com/BenKlingner/notification-sounds).
