@@ -1,5 +1,6 @@
 # Look at me
 
+The circle is deliberately huge (120px) — you'll spot it from the kitchen 🙂.
 Big green circle in the Paseo sidebar whenever an agent session needs your
 attention: finish, error, permission, or anything else.
 
