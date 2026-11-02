@@ -1,10 +1,12 @@
 {
   "name": "look-at-me",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "files": [
     "paseo-plugin.json",
     "OVERVIEW.md",
-    "index.client.tsx"
+    "index.client.tsx",
+    "icon.png",
+    "README.md"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit"

@@ -4,7 +4,7 @@ Plugins for [Paseo](https://paseo.sh). Each plugin lives in its own directory an
 
 | Plugin | What it adds |
 | --- | --- |
-| [look-at-me](look-at-me/README.md) | Big green circle in the sidebar whenever a session needs attention; click to jump straight to the most recent waiting session. |
+| <img src="https://raw.githubusercontent.com/bg172/paseo-plugins/main/look-at-me/icon.png" alt="" width="24" height="24" align="center"> [look-at-me](look-at-me/README.md) | Big green circle in the sidebar whenever a session needs attention; click to jump straight to the most recent waiting session. |
 
 ## Install
 
