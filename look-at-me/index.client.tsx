@@ -70,6 +70,9 @@ interface WaitingEntry {
 const waiting = new Map<string, WaitingEntry>();
 let waitingVersion = 0;
 const waitingListeners = new Set<() => void>();
+// Sessions consumed by circle clicks. A duplicate echo of the same attention
+// event must not re-add them; a genuinely new event (new key) un-consumes.
+const consumed = new Set<string>();
 
 function bumpWaiting(): void {
   waitingVersion += 1;
@@ -95,9 +98,7 @@ function shortId(id: string): string {
   return id.length > 12 ? `${id.slice(0, 8)}…` : id;
 }
 
-// Rotation pointer for the green circle: each click opens the next waiting
-// session by recency — most recent first, then older ones, wrapping around.
-let lastOpenedAgentId: string | null = null;
+// Recency order: most recent first, then older ones.
 let clickSeq = 0;
 
 function sortedWaitingIds(): string[] {
@@ -109,23 +110,26 @@ function sortedWaitingIds(): string[] {
     .map(([agentId]) => agentId);
 }
 
-// Next circle click target: the entry after the last opened one in recency
-// order, or the most recent when the pointer dangled (entry cleared).
+// Click-to-consume: each circle click opens the most recent waiting session
+// and removes exactly that one entry. Entries never die from the daemon's
+// attention-clear alone — only a circle click or a new prompt in the session
+// clears them, so the circle stays until every waiting session got its turn.
 function takeNextWaitingAgentId(): string | null {
   const ids = sortedWaitingIds();
   if (ids.length === 0) return null;
-  const at = lastOpenedAgentId ? ids.indexOf(lastOpenedAgentId) : -1;
-  const next = ids[(at + 1) % ids.length] ?? ids[0] ?? null;
-  if (next) lastOpenedAgentId = next;
+  const next = ids[0] ?? null;
+  if (next) {
+    waiting.delete(next);
+    consumed.add(next);
+  }
   return next;
 }
 
-// Label target: what the next click would open, without advancing the pointer.
+// Label target: what the next click would open, without consuming it.
 function peekNextWaitingAgentId(): string | null {
   const ids = sortedWaitingIds();
   if (ids.length === 0) return null;
-  const at = lastOpenedAgentId ? ids.indexOf(lastOpenedAgentId) : -1;
-  return ids[(at + 1) % ids.length] ?? ids[0] ?? null;
+  return ids[0] ?? null;
 }
 
 function FinishedRow({ count }: { count: number }) {
@@ -142,6 +146,8 @@ function FinishedRow({ count }: { count: number }) {
           const agentId = takeNextWaitingAgentId();
           if (!agentId) return;
           clickSeq += 1;
+          bumpWaiting();
+          refreshSidebar();
           openScreen({
             screenId: "look-at-me-list",
             params: { agent: agentId, n: String(clickSeq) },
@@ -304,6 +310,7 @@ export default function contribute(client: PluginClientContext) {
     // prompt" rule.
     const marker = promptMarker(agent);
     if (prompts.has(agent.id) && prompts.get(agent.id) !== marker) {
+      consumed.delete(agent.id);
       if (waiting.delete(agent.id)) {
         bumpWaiting();
         refreshSidebar();
@@ -313,14 +320,12 @@ export default function contribute(client: PluginClientContext) {
 
     const key = attentionKey(agent);
     if (key === null) {
-      // No longer needs attention (running, idle, or you sent a new prompt
-      // in this session). Record that so the NEXT attention is a real
-      // transition, and drop its circle entry.
+      // Attention cleared on the daemon side (viewed elsewhere, flag
+      // dropped). The entry stays: only a circle click or a new prompt in
+      // the session removes it, so the circle survives until every waiting
+      // session got its turn. Record the reset so the next real event
+      // still counts as new.
       seen.set(agent.id, "");
-      if (waiting.delete(agent.id)) {
-        bumpWaiting();
-        refreshSidebar();
-      }
       return;
     }
     // Needing attention. Show the circle only for a genuinely new event:
@@ -328,10 +333,13 @@ export default function contribute(client: PluginClientContext) {
     // A new prompt bumping updatedAt while the old flag is still set keeps
     // the same key, so it stays as-is.
     const prev = seen.get(agent.id);
+    // Clicked-through entries ignore duplicate echoes of the same event.
+    if (key !== "" && consumed.has(agent.id) && prev === key) return;
     const isNew =
       prev === undefined || prev === "" || (key !== "" && prev !== key);
     seen.set(agent.id, key === "" ? "untracked-event" : key);
     if (!live || !isNew) return;
+    consumed.delete(agent.id);
     if (!waiting.has(agent.id)) {
       waiting.set(agent.id, {
         reason: agent.attentionReason ?? null,
@@ -355,6 +363,7 @@ export default function contribute(client: PluginClientContext) {
   function forgetAgent(agentId: string): void {
     seen.delete(agentId);
     prompts.delete(agentId);
+    consumed.delete(agentId);
     if (waiting.delete(agentId)) {
       bumpWaiting();
       refreshSidebar();
