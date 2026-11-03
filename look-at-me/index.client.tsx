@@ -121,6 +121,10 @@ function takeNextWaitingAgentId(): string | null {
 }
 
 function FinishedRow({ count }: { count: number }) {
+  // Largest count that still fits the 120px circle: bold digits are ~0.62em
+  // wide with ~0.72em cap height, so size tiers by digit count.
+  const digits = String(count).length;
+  const fontSize = digits <= 1 ? 128 : digits === 2 ? 76 : digits === 3 ? 50 : 36;
   return function Row({ theme, openScreen }: PluginSidebarItemProps) {
     return (
       <Pressable
@@ -145,7 +149,7 @@ function FinishedRow({ count }: { count: number }) {
             justifyContent: "center",
           }}
         >
-          <Text style={{ color: "#ffffff", fontSize: 44, fontWeight: "bold" }}>
+          <Text style={{ color: "#ffffff", fontSize, fontWeight: "bold" }}>
             {count}
           </Text>
         </View>
