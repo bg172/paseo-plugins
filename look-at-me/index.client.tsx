@@ -120,7 +120,17 @@ function takeNextWaitingAgentId(): string | null {
   return next;
 }
 
+// Label target: what the next click would open, without advancing the pointer.
+function peekNextWaitingAgentId(): string | null {
+  const ids = sortedWaitingIds();
+  if (ids.length === 0) return null;
+  const at = lastOpenedAgentId ? ids.indexOf(lastOpenedAgentId) : -1;
+  return ids[(at + 1) % ids.length] ?? ids[0] ?? null;
+}
+
 function FinishedRow({ count }: { count: number }) {
+  const nextId = peekNextWaitingAgentId();
+  const nextTitle = nextId ? (waiting.get(nextId)?.title ?? shortId(nextId)) : null;
   // Largest count that still fits the 120px circle: bold digits are ~0.62em
   // wide with ~0.72em cap height, so size tiers by digit count.
   const digits = String(count).length;
@@ -154,7 +164,7 @@ function FinishedRow({ count }: { count: number }) {
           </Text>
         </View>
         <Text style={{ color: theme.colors.foreground, marginTop: 8 }}>
-          {count === 1 ? "session waiting — tap to open" : "sessions waiting — tap to open"}
+          {nextTitle ? `${nextTitle} — tap to open` : (count === 1 ? "session waiting — tap to open" : "sessions waiting — tap to open")}
         </Text>
       </Pressable>
     );
