@@ -73,6 +73,10 @@ const waitingListeners = new Set<() => void>();
 // Sessions consumed by circle clicks. A duplicate echo of the same attention
 // event must not re-add them; a genuinely new event (new key) un-consumes.
 const consumed = new Set<string>();
+// Handoff receipts for the screen: takeNext deletes the entry at click time,
+// so the opening screen resolves its target from this list (plus the live
+// map), not from the map alone. Bounded; rapid multi-clicks each keep theirs.
+const recentConsumed: string[] = [];
 // Module-level handle so the circle press handler can request a sidebar
 // refresh (refreshSidebar itself lives in activate scope).
 let requestSidebarRefresh: (() => void) | null = null;
@@ -124,6 +128,10 @@ function takeNextWaitingAgentId(): string | null {
   if (next) {
     waiting.delete(next);
     consumed.add(next);
+    recentConsumed.push(next);
+    if (recentConsumed.length > 10) {
+      recentConsumed.splice(0, recentConsumed.length - 10);
+    }
   }
   return next;
 }
@@ -185,8 +193,11 @@ function DoneListScreen({ navigation, theme, params }: PluginScreenProps) {
   const entries = [...waiting.entries()];
   // Circle click target: open the requested waiting session directly.
   // Falls back to the legacy single-entry auto-open when opened bare.
+  const paramAgent = typeof params.agent === "string" ? params.agent : null;
   const requestedId =
-    typeof params.agent === "string" && waiting.has(params.agent) ? params.agent : null;
+    paramAgent && (recentConsumed.includes(paramAgent) || waiting.has(paramAgent))
+      ? paramAgent
+      : null;
   const singleKey =
     entries.length === 1 && !requestedId
       ? `${entries[0][0]}#${entries[0][1].updatedAt}`
