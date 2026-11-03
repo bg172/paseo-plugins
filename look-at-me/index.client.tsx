@@ -73,6 +73,9 @@ const waitingListeners = new Set<() => void>();
 // Sessions consumed by circle clicks. A duplicate echo of the same attention
 // event must not re-add them; a genuinely new event (new key) un-consumes.
 const consumed = new Set<string>();
+// Module-level handle so the circle press handler can request a sidebar
+// refresh (refreshSidebar itself lives in activate scope).
+let requestSidebarRefresh: (() => void) | null = null;
 
 function bumpWaiting(): void {
   waitingVersion += 1;
@@ -147,7 +150,7 @@ function FinishedRow({ count }: { count: number }) {
           if (!agentId) return;
           clickSeq += 1;
           bumpWaiting();
-          refreshSidebar();
+          requestSidebarRefresh?.();
           openScreen({
             screenId: "look-at-me-list",
             params: { agent: agentId, n: String(clickSeq) },
@@ -303,6 +306,7 @@ export default function contribute(client: PluginClientContext) {
       // Older host without sidebar items; nothing to show.
     }
   }
+  requestSidebarRefresh = refreshSidebar;
 
   function noteAgent(agent: WatchedAgent, live: boolean): void {
     // A new prompt (or turn) clears this agent's done state, even before
@@ -422,6 +426,7 @@ export default function contribute(client: PluginClientContext) {
 
   return () => {
     stopped = true;
+    requestSidebarRefresh = null;
     unsubscribe?.();
     unsubscribe = null;
     releaseObservation?.();
