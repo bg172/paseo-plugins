@@ -342,7 +342,9 @@ export default function contribute(client: PluginClientContext) {
       const entry = waiting.get(agent.id);
       if (entry) {
         entry.reason = agent.attentionReason ?? null;
-        entry.title = agent.title ?? null;
+        // Updates often arrive without a title (partial upserts); never let
+        // a title-less update wipe the title we already know.
+        if (agent.title != null) entry.title = agent.title;
         entry.updatedAt = Date.now();
       }
     }
