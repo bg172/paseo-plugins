@@ -151,39 +151,76 @@ function FinishedRow({ count }: { count: number }) {
   const digits = String(count).length;
   const fontSize = digits <= 1 ? 128 : digits === 2 ? 76 : digits === 3 ? 50 : 36;
   return function Row({ theme, openScreen }: PluginSidebarItemProps) {
+    const openNext = () => {
+      const agentId = takeNextWaitingAgentId();
+      if (!agentId) return;
+      clickSeq += 1;
+      bumpWaiting();
+      requestSidebarRefresh?.();
+      openScreen({
+        screenId: "look-at-me-list",
+        params: { agent: agentId, n: String(clickSeq) },
+      });
+    };
+    const clearAll = () => {
+      // Clear everything: the circle vanishes until a genuinely new
+      // notification arrives (seen keys are kept, so old echoes stay
+      // silent; prompts tracking is untouched).
+      waiting.clear();
+      consumed.clear();
+      recentConsumed.length = 0;
+      bumpWaiting();
+      requestSidebarRefresh?.();
+    };
     return (
-      <Pressable
-        onPress={() => {
-          const agentId = takeNextWaitingAgentId();
-          if (!agentId) return;
-          clickSeq += 1;
-          bumpWaiting();
-          requestSidebarRefresh?.();
-          openScreen({
-            screenId: "look-at-me-list",
-            params: { agent: agentId, n: String(clickSeq) },
-          });
-        }}
-        style={{ alignItems: "center", paddingVertical: 12 }}
-      >
-        <View
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: 60,
-            backgroundColor: "#22c55e",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ color: "#ffffff", fontSize, fontWeight: "bold" }}>
-            {count}
-          </Text>
+      <View style={{ alignItems: "center", paddingVertical: 12 }}>
+        <View style={{ position: "relative" }}>
+          <Pressable
+            onPress={openNext}
+            accessibilityRole="button"
+            accessibilityLabel={nextTitle ? `Open waiting session ${nextTitle}` : "Open waiting session"}
+          >
+            <View
+              style={{
+                width: 120,
+                height: 120,
+                borderRadius: 60,
+                backgroundColor: "#22c55e",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: "#ffffff", fontSize, fontWeight: "bold" }}>
+                {count}
+              </Text>
+            </View>
+          </Pressable>
+          <Pressable
+            onPress={clearAll}
+            accessibilityRole="button"
+            accessibilityLabel="Clear all waiting notifications"
+            ref={(el) => {
+              // Take keyboard focus when the button appears (web); harmless
+              // no-op on native targets without a focus concept.
+              try {
+                (el as unknown as { focus?: () => void } | null)?.focus?.();
+              } catch {
+                // Focus unsupported here; the button still works by tap.
+              }
+            }}
+            style={{ position: "absolute", top: 0, right: 0, padding: 6 }}
+          >
+            <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+              ✕ clear
+            </Text>
+          </Pressable>
         </View>
-        <Text style={{ color: theme.colors.foreground, marginTop: 8 }}>
-          {nextTitle ? `${nextTitle} — tap to open` : (count === 1 ? "session waiting — tap to open" : "sessions waiting — tap to open")}
-        </Text>
-      </Pressable>
+        <Pressable onPress={openNext} style={{ marginTop: 8 }}>
+          <Text style={{ color: theme.colors.foreground }}>
+            {nextTitle ? `${nextTitle} — tap to open` : (count === 1 ? "session waiting — tap to open" : "sessions waiting — tap to open")}
+          </Text>
+        </Pressable>
+      </View>
     );
   };
 }
