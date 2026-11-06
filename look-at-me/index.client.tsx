@@ -199,15 +199,6 @@ function FinishedRow({ count }: { count: number }) {
             onPress={clearAll}
             accessibilityRole="button"
             accessibilityLabel="Clear all waiting notifications"
-            ref={(el) => {
-              // Take keyboard focus when the button appears (web); harmless
-              // no-op on native targets without a focus concept.
-              try {
-                (el as unknown as { focus?: () => void } | null)?.focus?.();
-              } catch {
-                // Focus unsupported here; the button still works by tap.
-              }
-            }}
             style={{ position: "absolute", top: 0, right: 0, padding: 0, transform: [{ translateX: "75%" }] }}
           >
             <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
