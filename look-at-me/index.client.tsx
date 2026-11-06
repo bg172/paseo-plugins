@@ -208,7 +208,7 @@ function FinishedRow({ count }: { count: number }) {
                 // Focus unsupported here; the button still works by tap.
               }
             }}
-            style={{ position: "absolute", top: 0, right: 0, padding: 0, transform: [{ translateX: "62.5%" }] }}
+            style={{ position: "absolute", top: 0, right: 0, padding: 0, transform: [{ translateX: "75%" }] }}
           >
             <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
               ✕ clear
