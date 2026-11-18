@@ -3,7 +3,11 @@ import type {
   PluginClientContext,
   PluginScreenProps,
   PluginSidebarItemProps,
+  PluginSurfaceProps,
 } from "@getpaseo/plugin/client";
+import { useSettings } from "@getpaseo/plugin/client";
+import { defineSettings } from "@getpaseo/plugin";
+import { z } from "zod";
 import { Pressable, Text, View } from "react-native";
 
 interface WatchedAgent {
@@ -131,6 +135,33 @@ function sortedIgnoredIds(): string[] {
   return [...ignored].sort();
 }
 
+// Persisted mirror of the ignore list: shown and editable in the plugin's
+// Settings screen (one-by-one ✕ plus remove-all), and surviving app restarts.
+// Scope "host": stored on the daemon next to the agent ids it filters (and
+// the only scope the plugin's pinned SDK 0.11.4 accepts). Memory stays the
+// live filter used by noteAgent; the settings screen unions the two on open,
+// so ignores made while Settings is closed are kept, not clobbered.
+const ignoredSettings = defineSettings({
+  id: "look-at-me.ignored",
+  scope: "host",
+  version: 1,
+  schema: z.object({ ignoredIds: z.array(z.string()).default([]) }),
+});
+
+// Latest saver from the mounted settings screen, if any. Saves can fail on a
+// stale revision (returns false, never throws); the next Settings open
+// re-unions and converges, so a failed save is never a lost ignore.
+let saveIgnoredSettings: (() => void) | null = null;
+let syncedSettingsRevision: string | null = null;
+
+function persistIgnored(): void {
+  try {
+    saveIgnoredSettings?.();
+  } catch {
+    // Settings screen not mounted; memory still filters, union on next open.
+  }
+}
+
 function ignoreAgent(agentId: string): void {
   ignored.add(agentId);
   seen.delete(agentId);
@@ -138,6 +169,7 @@ function ignoreAgent(agentId: string): void {
   consumed.delete(agentId);
   if (waiting.delete(agentId)) bumpWaiting();
   bumpIgnored();
+  persistIgnored();
   requestSidebarRefresh?.();
 }
 
@@ -149,6 +181,15 @@ function unignoreAgent(agentId: string): void {
   prompts.delete(agentId);
   consumed.delete(agentId);
   bumpIgnored();
+  persistIgnored();
+  requestSidebarRefresh?.();
+}
+
+function unignoreAllAgents(): void {
+  if (ignored.size === 0) return;
+  ignored.clear();
+  bumpIgnored();
+  persistIgnored();
   requestSidebarRefresh?.();
 }
 
@@ -429,6 +470,129 @@ function DoneListScreen({ navigation, theme, params }: PluginScreenProps) {
   );
 }
 
+function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
+  const settings = useSettings(ignoredSettings);
+  useSyncExternalStore(subscribeIgnored, getIgnoredVersion);
+
+  // Keep the saver pointed at the latest ready revision; clear on unmount.
+  useEffect(() => {
+    if (settings.status !== "ready") {
+      saveIgnoredSettings = null;
+      return () => {
+        saveIgnoredSettings = null;
+      };
+    }
+    const snap = settings;
+    saveIgnoredSettings = () => {
+      void snap.save({ ignoredIds: [...ignored] }, snap.revision);
+    };
+    return () => {
+      if (saveIgnoredSettings !== null) saveIgnoredSettings = null;
+    };
+  }, [settings]);
+
+  // Union stored + live sets once per revision, then save back only when the
+  // stored list differs (otherwise a post-save revision bump would loop).
+  useEffect(() => {
+    if (settings.status !== "ready") return;
+    if (syncedSettingsRevision === settings.revision) return;
+    syncedSettingsRevision = settings.revision;
+    const stored = settings.values.ignoredIds;
+    const union = [...new Set([...stored, ...ignored])];
+    let changed = false;
+    for (const id of union) {
+      if (!ignored.has(id)) {
+        ignored.add(id);
+        changed = true;
+      }
+    }
+    if (changed) {
+      bumpIgnored();
+      requestSidebarRefresh?.();
+    }
+    const needsSave =
+      union.length !== stored.length || union.some((id, i) => stored[i] !== id);
+    if (needsSave) {
+      void settings.save({ ignoredIds: union }, settings.revision);
+    }
+  }, [settings]);
+
+  if (settings.status === "loading") {
+    return (
+      <View style={{ padding: 16 }}>
+        <Text style={{ color: theme.colors.foreground }}>Loading…</Text>
+      </View>
+    );
+  }
+  if (settings.status === "error" || settings.status === "invalid") {
+    return (
+      <View style={{ padding: 16 }}>
+        <Text style={{ color: theme.colors.foreground }}>
+          Ignored list unavailable: {settings.error}
+        </Text>
+      </View>
+    );
+  }
+
+  const ids = sortedIgnoredIds();
+  return (
+    <View style={{ padding: 16, gap: 12 }}>
+      {ids.length === 0 ? (
+        <Text style={{ color: theme.colors.foreground }}>
+          No ignored sessions. Ignored sessions never raise the green circle.
+        </Text>
+      ) : (
+        ids.map((id) => {
+          const title = titles.get(id) ?? null;
+          return (
+            <View
+              key={id}
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <Pressable
+                onPress={() => unignoreAgent(id)}
+                accessibilityRole="button"
+                accessibilityLabel={`Stop ignoring ${title ?? short7(id)}`}
+              >
+                <Text style={{ color: theme.colors.foreground, fontSize: 16 }}>
+                  ✕
+                </Text>
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{ color: theme.colors.foreground, fontSize: 16 }}
+                  numberOfLines={1}
+                >
+                  {short7(id)}
+                </Text>
+                {title && (
+                  <Text
+                    style={{ color: theme.colors.foreground, fontSize: 12 }}
+                    numberOfLines={1}
+                  >
+                    {title}
+                  </Text>
+                )}
+              </View>
+            </View>
+          );
+        })
+      )}
+      {ids.length > 0 && (
+        <Pressable
+          onPress={unignoreAllAgents}
+          accessibilityRole="button"
+          accessibilityLabel="Stop ignoring all sessions"
+        >
+          <Text style={{ color: theme.colors.foreground, fontSize: 14 }}>
+            Stop ignoring all ({ids.length})
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 export default function contribute(client: PluginClientContext) {
   let stopped = false;
   let removeSidebarItem: (() => void) | null = null;
@@ -445,6 +609,19 @@ export default function contribute(client: PluginClientContext) {
   } catch {
     // Older host without screens; the circle still shows the count.
     removeScreen = null;
+  }
+
+  let removeSettingsScreen: (() => void) | null = null;
+  try {
+    removeSettingsScreen = client.addSettingsScreen({
+      id: "look-at-me-ignored",
+      title: "Ignored sessions",
+      icon: "EyeOff",
+      Component: IgnoredSettingsScreen,
+    });
+  } catch {
+    // Older host without settings screens; the sidebar list still works.
+    removeSettingsScreen = null;
   }
 
   function refreshSidebar(): void {
@@ -617,5 +794,12 @@ export default function contribute(client: PluginClientContext) {
       // Already gone.
     }
     removeScreen = null;
+    try {
+      removeSettingsScreen?.();
+    } catch {
+      // Already gone.
+    }
+    removeSettingsScreen = null;
+    saveIgnoredSettings = null;
   };
 }
