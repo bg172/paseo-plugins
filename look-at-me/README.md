@@ -8,7 +8,10 @@ Are you also a friend of long-running sessions, tired of staring at Paseo and wa
 The circle is deliberately huge (120px) — you'll spot it from the kitchen 🙂.
 Clicking the circle opens the most recent waiting session directly; each
 further click opens the next older one, cycling through all waiting sessions.
-Sending a new prompt in a session clears its entry. Sound is handled
+Sending a new prompt in a session clears its entry. Each waiting session in
+the list has an "ignore this session's updates" action: ignored sessions
+never raise the circle again, appear with their first 7 id symbols in a list
+left of the circle, and can be un-ignored with the ✕ next to them. Sound is handled
 separately (for example by a notification-sounds plugin); this plugin makes
 no sound itself.
 

@@ -73,6 +73,17 @@ const waitingListeners = new Set<() => void>();
 // Sessions consumed by circle clicks. A duplicate echo of the same attention
 // event must not re-add them; a genuinely new event (new key) un-consumes.
 const consumed = new Set<string>();
+// Last attention key per agent, and last prompt marker per agent. Module-level
+// like `waiting` so the ignore filter (also module-level) can re-arm them.
+const seen = new Map<string, string>();
+const prompts = new Map<string, string>();
+// Sessions whose notifications are filtered out ("ignore this session's
+// updates"). While ignored, attention events never queue and any pending entry
+// is dropped; un-ignoring (x) re-arms the session so its next event notifies
+// again.
+const ignored = new Set<string>();
+let ignoredVersion = 0;
+const ignoredListeners = new Set<() => void>();
 // Handoff receipts for the screen: takeNext deletes the entry at click time,
 // so the opening screen resolves its target from this list (plus the live
 // map), not from the map alone. Bounded; rapid multi-clicks each keep theirs.
@@ -97,12 +108,58 @@ function getWaitingVersion(): number {
   return waitingVersion;
 }
 
+function bumpIgnored(): void {
+  ignoredVersion += 1;
+  ignoredListeners.forEach((listener) => listener());
+}
+
+function subscribeIgnored(listener: () => void): () => void {
+  ignoredListeners.add(listener);
+  return () => {
+    ignoredListeners.delete(listener);
+  };
+}
+
+function getIgnoredVersion(): number {
+  return ignoredVersion;
+}
+
+function sortedIgnoredIds(): string[] {
+  return [...ignored].sort();
+}
+
+function ignoreAgent(agentId: string): void {
+  ignored.add(agentId);
+  seen.delete(agentId);
+  prompts.delete(agentId);
+  consumed.delete(agentId);
+  if (waiting.delete(agentId)) bumpWaiting();
+  bumpIgnored();
+  requestSidebarRefresh?.();
+}
+
+function unignoreAgent(agentId: string): void {
+  if (!ignored.delete(agentId)) return;
+  // Re-arm: the next attention event must count as new even if the daemon
+  // still raises the same key.
+  seen.delete(agentId);
+  prompts.delete(agentId);
+  consumed.delete(agentId);
+  bumpIgnored();
+  requestSidebarRefresh?.();
+}
+
 // Remembers which single entry already auto-opened, so viewing the
 // screen again does not re-jump to the same session.
 let lastAutoOpenedKey: string | null = null;
 
 function shortId(id: string): string {
   return id.length > 12 ? `${id.slice(0, 8)}…` : id;
+}
+
+// First 7 symbols of the paseo id, used by the ignored-sessions list.
+function short7(id: string): string {
+  return id.slice(0, 7);
 }
 
 // Recency order: most recent first, then older ones.
@@ -151,6 +208,9 @@ function FinishedRow({ count }: { count: number }) {
   const digits = String(count).length;
   const fontSize = digits <= 1 ? 128 : digits === 2 ? 76 : digits === 3 ? 50 : 36;
   return function Row({ theme, openScreen }: PluginSidebarItemProps) {
+    useSyncExternalStore(subscribeWaiting, getWaitingVersion);
+    useSyncExternalStore(subscribeIgnored, getIgnoredVersion);
+    const ignoredIds = sortedIgnoredIds();
     const openNext = () => {
       const agentId = takeNextWaitingAgentId();
       if (!agentId) return;
@@ -174,43 +234,72 @@ function FinishedRow({ count }: { count: number }) {
     };
     return (
       <View style={{ alignItems: "center", paddingVertical: 12 }}>
-        <View style={{ position: "relative" }}>
-          <Pressable
-            onPress={openNext}
-            accessibilityRole="button"
-            accessibilityLabel={nextTitle ? `Open waiting session ${nextTitle}` : "Open waiting session"}
-          >
-            <View
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                backgroundColor: "#22c55e",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ color: "#ffffff", fontSize, fontWeight: "bold" }}>
-                {count}
-              </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+          {ignoredIds.length > 0 && (
+            <View style={{ gap: 6, maxWidth: 120 }}>
+              {ignoredIds.map((id) => (
+                <View
+                  key={id}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                >
+                  <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                    {short7(id)}
+                  </Text>
+                  <Pressable
+                    onPress={() => unignoreAgent(id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Stop ignoring ${short7(id)}`}
+                  >
+                    <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                      ✕
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
             </View>
-          </Pressable>
-          <Pressable
-            onPress={clearAll}
-            accessibilityRole="button"
-            accessibilityLabel="Clear all waiting notifications"
-            style={{ position: "absolute", top: 0, right: 0, padding: 0, transform: [{ translateX: "75%" }] }}
-          >
-            <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
-              ✕ clear
-            </Text>
-          </Pressable>
+          )}
+          {count > 0 && (
+          <View style={{ position: "relative" }}>
+            <Pressable
+              onPress={openNext}
+              accessibilityRole="button"
+              accessibilityLabel={nextTitle ? `Open waiting session ${nextTitle}` : "Open waiting session"}
+            >
+              <View
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 60,
+                  backgroundColor: "#22c55e",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ color: "#ffffff", fontSize, fontWeight: "bold" }}>
+                  {count}
+                </Text>
+              </View>
+            </Pressable>
+            <Pressable
+              onPress={clearAll}
+              accessibilityRole="button"
+              accessibilityLabel="Clear all waiting notifications"
+              style={{ position: "absolute", top: 0, right: 0, padding: 0, transform: [{ translateX: "75%" }] }}
+            >
+              <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                ✕ clear
+              </Text>
+            </Pressable>
+          </View>
+          )}
         </View>
+        {count > 0 && (
         <Pressable onPress={openNext} style={{ marginTop: 8 }}>
           <Text style={{ color: theme.colors.foreground }}>
             {nextTitle ? `${nextTitle} — tap to open` : (count === 1 ? "session waiting — tap to open" : "sessions waiting — tap to open")}
           </Text>
         </Pressable>
+        )}
       </View>
     );
   };
@@ -289,6 +378,15 @@ function DoneListScreen({ navigation, theme, params }: PluginScreenProps) {
                 <Text style={{ color: theme.colors.foreground }}>
                   {reasonLabel(entry.reason)}
                 </Text>
+                <Pressable
+                  onPress={() => ignoreAgent(agentId)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ignore this session's updates (${label})`}
+                >
+                  <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                    ignore this session's updates
+                  </Text>
+                </Pressable>
               </View>
             </View>
           );
@@ -309,8 +407,6 @@ function DoneListScreen({ navigation, theme, params }: PluginScreenProps) {
 
 export default function contribute(client: PluginClientContext) {
   let stopped = false;
-  const seen = new Map<string, string>();
-  const prompts = new Map<string, string>();
   let removeSidebarItem: (() => void) | null = null;
   let unsubscribe: (() => void) | null = null;
   let releaseObservation: (() => void) | null = null;
@@ -334,7 +430,7 @@ export default function contribute(client: PluginClientContext) {
       // Host already dropped it; nothing to do.
     }
     removeSidebarItem = null;
-    if (waiting.size === 0) return;
+    if (waiting.size === 0 && ignored.size === 0) return;
     try {
       removeSidebarItem = client.addSidebarFooterItem({
         id: "look-at-me",
@@ -348,6 +444,15 @@ export default function contribute(client: PluginClientContext) {
   requestSidebarRefresh = refreshSidebar;
 
   function noteAgent(agent: WatchedAgent, live: boolean): void {
+    if (ignored.has(agent.id)) {
+      // Filtered out ("ignore this session's updates"): never queue, and
+      // drop any stale entry so the circle stays quiet for this session.
+      if (waiting.delete(agent.id)) {
+        bumpWaiting();
+        refreshSidebar();
+      }
+      return;
+    }
     // A new prompt (or turn) clears this agent's done state, even before
     // we look at attention state. This is the "until user sends a new
     // prompt" rule.
