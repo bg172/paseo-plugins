@@ -80,6 +80,10 @@ const consumed = new Set<string>();
 // like `waiting` so the ignore filter (also module-level) can re-arm them.
 const seen = new Map<string, string>();
 const prompts = new Map<string, string>();
+// Last full snapshot per agent, so un-ignoring can immediately re-surface a
+// session that is still waiting instead of staying silent until its next
+// (possibly never-coming) event.
+const lastAgent = new Map<string, WatchedAgent>();
 // Last known title per agent, so the ignored list can show titles even
 // though ignored sessions no longer pass through the waiting map.
 const titles = new Map<string, string>();
@@ -97,6 +101,9 @@ const recentConsumed: string[] = [];
 // Module-level handle so the circle press handler can request a sidebar
 // refresh (refreshSidebar itself lives in activate scope).
 let requestSidebarRefresh: (() => void) | null = null;
+// Module-level handle so the ignore actions can ask for a replay of the
+// latest snapshot (replay itself lives in contribute scope next to noteAgent).
+let requestReplay: ((agentId: string) => void) | null = null;
 
 function bumpWaiting(): void {
   waitingVersion += 1;
@@ -176,14 +183,24 @@ function unignoreAgent(agentId: string): void {
   bumpIgnored();
   persistIgnored();
   requestSidebarRefresh?.();
+  // Re-surface a session that is still waiting right now.
+  requestReplay?.(agentId);
 }
 
 function unignoreAllAgents(): void {
   if (ignored.size === 0) return;
+  const ids = [...ignored];
   ignored.clear();
+  for (const id of ids) {
+    seen.delete(id);
+    prompts.delete(id);
+    consumed.delete(id);
+  }
   bumpIgnored();
   persistIgnored();
   requestSidebarRefresh?.();
+  // Re-surface sessions that are still waiting right now.
+  for (const id of ids) requestReplay?.(id);
 }
 
 // Remembers which single entry already auto-opened, so viewing the
@@ -638,9 +655,15 @@ export default function contribute(client: PluginClientContext) {
     }
   }
   requestSidebarRefresh = refreshSidebar;
+  requestReplay = (agentId: string) => {
+    const snapshot = lastAgent.get(agentId);
+    if (snapshot) noteAgent(snapshot, true);
+  };
 
   function noteAgent(agent: WatchedAgent, live: boolean): void {
-    // Remember the title for the ignored list before any filtering.
+    // Remember the snapshot and title before any filtering: un-ignoring
+    // replays the latest snapshot so a still-waiting session re-surfaces.
+    lastAgent.set(agent.id, agent);
     if (agent.title != null) titles.set(agent.id, agent.title);
     if (ignored.has(agent.id)) {
       // Filtered out ("ignore this session's updates"): never queue, and
@@ -709,6 +732,7 @@ export default function contribute(client: PluginClientContext) {
   function forgetAgent(agentId: string): void {
     seen.delete(agentId);
     prompts.delete(agentId);
+    lastAgent.delete(agentId);
     titles.delete(agentId);
     consumed.delete(agentId);
     if (waiting.delete(agentId)) {
@@ -770,6 +794,7 @@ export default function contribute(client: PluginClientContext) {
   return () => {
     stopped = true;
     requestSidebarRefresh = null;
+    requestReplay = null;
     unsubscribe?.();
     unsubscribe = null;
     releaseObservation?.();

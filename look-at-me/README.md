@@ -15,7 +15,8 @@ symbols plus title, left-aligned in a list left of the circle (shown only
 while the circle is visible), and can be un-ignored with the ✕ next to them.
 The full ignored list also lives in the plugin's Settings screen ("Ignored
 sessions"), with ✕ per session and a stop-ignoring-all action, and it
-survives app restarts. Sound is handled
+survives app restarts. Un-ignoring re-arms the session and immediately
+re-surfaces it if it is still waiting. Sound is handled
 separately (for example by a notification-sounds plugin); this plugin makes
 no sound itself.
 
