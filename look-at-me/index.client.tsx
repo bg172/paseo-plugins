@@ -290,6 +290,16 @@ function FinishedRow({ count }: { count: number }) {
       bumpWaiting();
       requestSidebarRefresh?.();
     };
+    const clearNext = () => {
+      // Dismiss only the notification the next click would open: consume
+      // exactly that entry without opening its session. A duplicate echo of
+      // the same event stays silent (consumed); a genuinely new event
+      // re-arms it.
+      const agentId = takeNextWaitingAgentId();
+      if (!agentId) return;
+      bumpWaiting();
+      requestSidebarRefresh?.();
+    };
     return (
       <View style={{ alignItems: "center", paddingVertical: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
@@ -348,10 +358,20 @@ function FinishedRow({ count }: { count: number }) {
               onPress={clearAll}
               accessibilityRole="button"
               accessibilityLabel="Clear all waiting notifications"
+              style={{ position: "absolute", top: 0, left: 0, padding: 0, transform: [{ translateX: "-75%" }] }}
+            >
+              <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                ✕ clear all
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={clearNext}
+              accessibilityRole="button"
+              accessibilityLabel="Clear this waiting notification"
               style={{ position: "absolute", top: 0, right: 0, padding: 0, transform: [{ translateX: "75%" }] }}
             >
               <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
-                ✕ clear
+                ✕ clear this
               </Text>
             </Pressable>
           </View>
