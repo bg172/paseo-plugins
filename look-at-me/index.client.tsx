@@ -302,9 +302,19 @@ function FinishedRow({ count }: { count: number }) {
     };
     return (
       <View style={{ alignItems: "center", paddingVertical: 12 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+        <View style={{ position: "relative" }}>
           {count > 0 && ignoredIds.length > 0 && (
-            <View style={{ gap: 6, maxWidth: 160, alignItems: "flex-start" }}>
+            <View
+              style={{
+                position: "absolute",
+                right: "100%",
+                top: 0,
+                marginRight: 12,
+                maxWidth: 150,
+                gap: 6,
+                alignItems: "flex-start",
+              }}
+            >
               {ignoredIds.map((id) => {
                 const title = titles.get(id) ?? null;
                 return (
@@ -322,8 +332,9 @@ function FinishedRow({ count }: { count: number }) {
                       </Text>
                     </Pressable>
                     <Text
-                      style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left" }}
+                      style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left", maxWidth: 110 }}
                       numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
                       {title ? `${short7(id)} ${title}` : short7(id)}
                     </Text>
@@ -333,7 +344,6 @@ function FinishedRow({ count }: { count: number }) {
             </View>
           )}
           {count > 0 && (
-          <View style={{ position: "relative" }}>
             <Pressable
               onPress={openNext}
               accessibilityRole="button"
@@ -354,6 +364,8 @@ function FinishedRow({ count }: { count: number }) {
                 </Text>
               </View>
             </Pressable>
+          )}
+          {count > 0 && (
             <Pressable
               onPress={clearAll}
               accessibilityRole="button"
@@ -364,6 +376,8 @@ function FinishedRow({ count }: { count: number }) {
                 ✕ clear all
               </Text>
             </Pressable>
+          )}
+          {count > 0 && (
             <Pressable
               onPress={clearNext}
               accessibilityRole="button"
@@ -374,7 +388,6 @@ function FinishedRow({ count }: { count: number }) {
                 ✕ clear this
               </Text>
             </Pressable>
-          </View>
           )}
         </View>
         {count > 0 && nextId && (
