@@ -77,6 +77,9 @@ const consumed = new Set<string>();
 // like `waiting` so the ignore filter (also module-level) can re-arm them.
 const seen = new Map<string, string>();
 const prompts = new Map<string, string>();
+// Last known title per agent, so the ignored list can show titles even
+// though ignored sessions no longer pass through the waiting map.
+const titles = new Map<string, string>();
 // Sessions whose notifications are filtered out ("ignore this session's
 // updates"). While ignored, attention events never queue and any pending entry
 // is dropped; un-ignoring (x) re-arms the session so its next event notifies
@@ -239,27 +242,33 @@ function FinishedRow({ count }: { count: number }) {
     return (
       <View style={{ alignItems: "center", paddingVertical: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-          {ignoredIds.length > 0 && (
-            <View style={{ gap: 6, maxWidth: 120 }}>
-              {ignoredIds.map((id) => (
-                <View
-                  key={id}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-                >
-                  <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
-                    {short7(id)}
-                  </Text>
-                  <Pressable
-                    onPress={() => unignoreAgent(id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Stop ignoring ${short7(id)}`}
+          {count > 0 && ignoredIds.length > 0 && (
+            <View style={{ gap: 6, maxWidth: 160, alignItems: "flex-start" }}>
+              {ignoredIds.map((id) => {
+                const title = titles.get(id) ?? null;
+                return (
+                  <View
+                    key={id}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
                   >
-                    <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
-                      ✕
+                    <Pressable
+                      onPress={() => unignoreAgent(id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Stop ignoring ${title ?? short7(id)}`}
+                    >
+                      <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                        ✕
+                      </Text>
+                    </Pressable>
+                    <Text
+                      style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left" }}
+                      numberOfLines={1}
+                    >
+                      {title ? `${short7(id)} ${title}` : short7(id)}
                     </Text>
-                  </Pressable>
-                </View>
-              ))}
+                  </View>
+                );
+              })}
             </View>
           )}
           {count > 0 && (
@@ -445,7 +454,9 @@ export default function contribute(client: PluginClientContext) {
       // Host already dropped it; nothing to do.
     }
     removeSidebarItem = null;
-    if (waiting.size === 0 && ignored.size === 0) return;
+    // The whole footer (circle AND ignored list) shows only while at least
+    // one session is waiting: no circle, no ignored lines.
+    if (waiting.size === 0) return;
     try {
       removeSidebarItem = client.addSidebarFooterItem({
         id: "look-at-me",
@@ -459,6 +470,8 @@ export default function contribute(client: PluginClientContext) {
   requestSidebarRefresh = refreshSidebar;
 
   function noteAgent(agent: WatchedAgent, live: boolean): void {
+    // Remember the title for the ignored list before any filtering.
+    if (agent.title != null) titles.set(agent.id, agent.title);
     if (ignored.has(agent.id)) {
       // Filtered out ("ignore this session's updates"): never queue, and
       // drop any stale entry so the circle stays quiet for this session.
@@ -526,6 +539,7 @@ export default function contribute(client: PluginClientContext) {
   function forgetAgent(agentId: string): void {
     seen.delete(agentId);
     prompts.delete(agentId);
+    titles.delete(agentId);
     consumed.delete(agentId);
     if (waiting.delete(agentId)) {
       bumpWaiting();
