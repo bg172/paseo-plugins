@@ -308,7 +308,8 @@ function FinishedRow({ count }: { count: number }) {
               style={{
                 position: "absolute",
                 right: "100%",
-                top: 0,
+                // Second line: the first line belongs to "clear all".
+                top: 22,
                 marginRight: 12,
                 maxWidth: 150,
                 gap: 6,
