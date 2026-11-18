@@ -6,8 +6,7 @@ import type {
   PluginSurfaceProps,
 } from "@getpaseo/plugin/client";
 import { useSettings } from "@getpaseo/plugin/client";
-import { defineSettings } from "@getpaseo/plugin";
-import { z } from "zod";
+import { ignoredSettings } from "./shared/ignored-settings.js";
 import { Pressable, Text, View } from "react-native";
 
 interface WatchedAgent {
@@ -137,16 +136,10 @@ function sortedIgnoredIds(): string[] {
 
 // Persisted mirror of the ignore list: shown and editable in the plugin's
 // Settings screen (one-by-one ✕ plus remove-all), and surviving app restarts.
-// Scope "host": stored on the daemon next to the agent ids it filters (and
-// the only scope the plugin's pinned SDK 0.11.4 accepts). Memory stays the
-// live filter used by noteAgent; the settings screen unions the two on open,
-// so ignores made while Settings is closed are kept, not clobbered.
-const ignoredSettings = defineSettings({
-  id: "look-at-me-ignored",
-  scope: "host",
-  version: 1,
-  schema: z.object({ ignoredIds: z.array(z.string()).default([]) }),
-});
+// Definition lives in shared/; the daemon side is wired up in index.server.ts
+// via server.registerSettings. Memory stays the live filter used by
+// noteAgent; the settings screen unions the two on open, so ignores made
+// while Settings is closed are kept, not clobbered.
 
 // Latest saver from the mounted settings screen, if any. Saves can fail on a
 // stale revision (returns false, never throws); the next Settings open
