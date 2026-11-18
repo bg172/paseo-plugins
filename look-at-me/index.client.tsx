@@ -211,6 +211,10 @@ function FinishedRow({ count }: { count: number }) {
     useSyncExternalStore(subscribeWaiting, getWaitingVersion);
     useSyncExternalStore(subscribeIgnored, getIgnoredVersion);
     const ignoredIds = sortedIgnoredIds();
+    // The session the next circle click would open. Shown with its own
+    // ignore action so filtering never requires opening the list screen
+    // first (a single waiting entry auto-opens the agent on click).
+    const nextId = peekNextWaitingAgentId();
     const openNext = () => {
       const agentId = takeNextWaitingAgentId();
       if (!agentId) return;
@@ -293,12 +297,23 @@ function FinishedRow({ count }: { count: number }) {
           </View>
           )}
         </View>
-        {count > 0 && (
-        <Pressable onPress={openNext} style={{ marginTop: 8 }}>
-          <Text style={{ color: theme.colors.foreground }}>
-            {nextTitle ? `${nextTitle} — tap to open` : (count === 1 ? "session waiting — tap to open" : "sessions waiting — tap to open")}
-          </Text>
-        </Pressable>
+        {count > 0 && nextId && (
+        <View style={{ marginTop: 8, alignItems: "center", gap: 4 }}>
+          <Pressable onPress={openNext}>
+            <Text style={{ color: theme.colors.foreground }}>
+              {nextTitle ? `${nextTitle} — tap to open` : (count === 1 ? "session waiting — tap to open" : "sessions waiting — tap to open")}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => ignoreAgent(nextId)}
+            accessibilityRole="button"
+            accessibilityLabel={`Ignore this session's updates (${nextTitle ?? shortId(nextId)})`}
+          >
+            <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+              ignore this session's updates
+            </Text>
+          </Pressable>
+        </View>
         )}
       </View>
     );
