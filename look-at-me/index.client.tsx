@@ -390,7 +390,7 @@ function FinishedRow({ count }: { count: number }) {
             accessibilityLabel={`Ignore this session's updates (${nextTitle ?? shortId(nextId)})`}
           >
             <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
-              ignore this session's updates
+              🧠 ignore this session's updates
             </Text>
           </Pressable>
         </View>
@@ -479,7 +479,7 @@ function DoneListScreen({ navigation, theme, params }: PluginScreenProps) {
                   accessibilityLabel={`Ignore this session's updates (${label})`}
                 >
                   <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
-                    ignore this session's updates
+                    🧠 ignore this session's updates
                   </Text>
                 </Pressable>
               </View>
