@@ -530,6 +530,17 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
   const ids = sortedIgnoredIds();
   return (
     <View style={{ padding: 16, gap: 12 }}>
+      {ids.length > 0 && (
+        <Pressable
+          onPress={unignoreAllAgents}
+          accessibilityRole="button"
+          accessibilityLabel="Stop ignoring all sessions"
+        >
+          <Text style={{ color: theme.colors.foreground, fontSize: 14 }}>
+            Stop ignoring all ({ids.length})
+          </Text>
+        </Pressable>
+      )}
       {ids.length === 0 ? (
         <Text style={{ color: theme.colors.foreground }}>
           No ignored sessions. Ignored sessions never raise the green circle.
@@ -570,17 +581,6 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
             </View>
           );
         })
-      )}
-      {ids.length > 0 && (
-        <Pressable
-          onPress={unignoreAllAgents}
-          accessibilityRole="button"
-          accessibilityLabel="Stop ignoring all sessions"
-        >
-          <Text style={{ color: theme.colors.foreground, fontSize: 14 }}>
-            Stop ignoring all ({ids.length})
-          </Text>
-        </Pressable>
       )}
     </View>
   );
