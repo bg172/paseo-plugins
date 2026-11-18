@@ -142,7 +142,7 @@ function sortedIgnoredIds(): string[] {
 // live filter used by noteAgent; the settings screen unions the two on open,
 // so ignores made while Settings is closed are kept, not clobbered.
 const ignoredSettings = defineSettings({
-  id: "look-at-me.ignored",
+  id: "look-at-me-ignored",
   scope: "host",
   version: 1,
   schema: z.object({ ignoredIds: z.array(z.string()).default([]) }),
