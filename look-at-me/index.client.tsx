@@ -266,6 +266,7 @@ function FinishedRow({ count }: { count: number }) {
     useSyncExternalStore(subscribeWaiting, getWaitingVersion);
     useSyncExternalStore(subscribeIgnored, getIgnoredVersion);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const [tip, setTip] = useState<string | null>(null);
     const ignoredIds = sortedIgnoredIds();
     // Tooltip placement: rendered after the circle in tree order so it
     // paints above it on every renderer (native paint order ignores zIndex).
@@ -331,6 +332,15 @@ function FinishedRow({ count }: { count: number }) {
                 alignItems: "flex-start",
               }}
             >
+              <Text
+                style={{
+                  color: theme.colors.foreground,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                Ignoring:
+              </Text>
               {ignoredIds.map((id) => {
                 const title = titles.get(id) ?? null;
                 return (
@@ -340,6 +350,10 @@ function FinishedRow({ count }: { count: number }) {
                   >
                     <Pressable
                       onPress={() => unignoreAgent(id)}
+                      onHoverIn={() =>
+                        setTip("stop ignoring — its notifications will show again")
+                      }
+                      onHoverOut={() => setTip(null)}
                       accessibilityRole="button"
                       accessibilityLabel={`Stop ignoring ${title ?? short7(id)}`}
                     >
@@ -371,6 +385,8 @@ function FinishedRow({ count }: { count: number }) {
           {count > 0 && (
             <Pressable
               onPress={openNext}
+              onHoverIn={() => setTip("jump to the most recent session update")}
+              onHoverOut={() => setTip(null)}
               accessibilityRole="button"
               accessibilityLabel={nextTitle ? `Open waiting session ${nextTitle}` : "Open waiting session"}
             >
@@ -393,6 +409,8 @@ function FinishedRow({ count }: { count: number }) {
           {count > 0 && (
             <Pressable
               onPress={clearNext}
+              onHoverIn={() => setTip("dismiss only this notification — the rest stay")}
+              onHoverOut={() => setTip(null)}
               accessibilityRole="button"
               accessibilityLabel="Clear this waiting notification"
               style={{ position: "absolute", top: 0, right: -60, padding: 0 }}
@@ -405,6 +423,8 @@ function FinishedRow({ count }: { count: number }) {
           {count > 0 && (
             <Pressable
               onPress={clearAll}
+              onHoverIn={() => setTip("dismiss all waiting notifications")}
+              onHoverOut={() => setTip(null)}
               accessibilityRole="button"
               accessibilityLabel="Clear all waiting notifications"
               style={{ position: "absolute", top: 22, right: -60, padding: 0 }}
@@ -420,7 +440,8 @@ function FinishedRow({ count }: { count: number }) {
               style={{
                 position: "absolute",
                 left: 8,
-                top: 24 + hoveredIndex * 22,
+                // Label row ("Ignoring:") shifted the lines down by ~22px.
+                top: 46 + hoveredIndex * 22,
                 maxWidth: 220,
                 zIndex: 10,
                 elevation: 10,
@@ -438,6 +459,42 @@ function FinishedRow({ count }: { count: number }) {
               </Text>
             </View>
           )}
+          {count > 0 && tip && (
+            <View
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: 126,
+                alignItems: "center",
+                zIndex: 10,
+                elevation: 10,
+                // Pointer-transparent like the title bubble: never steal the
+                // hover from the button below it.
+                pointerEvents: "none",
+              }}
+            >
+              <View
+                style={{
+                  maxWidth: 240,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 6,
+                  backgroundColor: theme.colors.foreground,
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.colors.surface0,
+                    fontSize: 12,
+                    textAlign: "center",
+                  }}
+                >
+                  {tip}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
         {count > 0 && nextId && (
         <View style={{ marginTop: 8, alignItems: "center", gap: 4 }}>
@@ -448,6 +505,8 @@ function FinishedRow({ count }: { count: number }) {
           </Pressable>
           <Pressable
             onPress={() => ignoreAgent(nextId)}
+            onHoverIn={() => setTip("mute this session — never notify about it again")}
+            onHoverOut={() => setTip(null)}
             accessibilityRole="button"
             accessibilityLabel={`Ignore this session's updates (${nextTitle ?? shortId(nextId)})`}
           >
