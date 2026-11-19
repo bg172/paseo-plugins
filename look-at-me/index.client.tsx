@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type {
   PluginClientContext,
   PluginScreenProps,
@@ -217,6 +217,17 @@ function short7(id: string): string {
   return id.slice(0, 7);
 }
 
+// Hover handlers for capped title lines: hovering reveals the full title in
+// a bubble. Passed via spread (not inline props) so hosts whose typings lack
+// hover handlers still typecheck; on touch platforms hover never fires and
+// the handlers are inert, with full titles available in Settings / the list.
+function hoverProps(id: string, setHovered: (id: string | null) => void) {
+  return {
+    onHoverIn: () => setHovered(id),
+    onHoverOut: () => setHovered(null),
+  };
+}
+
 // Recency order: most recent first, then older ones.
 let clickSeq = 0;
 
@@ -265,6 +276,7 @@ function FinishedRow({ count }: { count: number }) {
   return function Row({ theme, openScreen }: PluginSidebarItemProps) {
     useSyncExternalStore(subscribeWaiting, getWaitingVersion);
     useSyncExternalStore(subscribeIgnored, getIgnoredVersion);
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
     const ignoredIds = sortedIgnoredIds();
     // The session the next circle click would open. Shown with its own
     // ignore action so filtering never requires opening the list screen
@@ -331,6 +343,7 @@ function FinishedRow({ count }: { count: number }) {
                   <View
                     key={id}
                     style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                    {...hoverProps(id, setHoveredId)}
                   >
                     <Pressable
                       onPress={() => unignoreAgent(id)}
@@ -348,6 +361,25 @@ function FinishedRow({ count }: { count: number }) {
                     >
                       {title ? `${short7(id)} ${title}` : short7(id)}
                     </Text>
+                    {hoveredId === id && title && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: 20,
+                          left: 0,
+                          zIndex: 10,
+                          maxWidth: 220,
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 6,
+                          backgroundColor: theme.colors.foreground,
+                        }}
+                      >
+                        <Text style={{ color: theme.colors.surface0, fontSize: 12 }}>
+                          {`${short7(id)} ${title}`}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 );
               })}
@@ -518,6 +550,7 @@ function DoneListScreen({ navigation, theme, params }: PluginScreenProps) {
 function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
   const settings = useSettings(ignoredSettings);
   useSyncExternalStore(subscribeIgnored, getIgnoredVersion);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Keep the saver pointed at the latest ready revision; clear on unmount.
   useEffect(() => {
@@ -605,6 +638,7 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
             <View
               key={id}
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              {...hoverProps(id, setHoveredId)}
             >
               <Pressable
                 onPress={() => unignoreAgent(id)}
@@ -631,6 +665,25 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
                   </Text>
                 )}
               </View>
+              {hoveredId === id && title && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 40,
+                    left: 0,
+                    zIndex: 10,
+                    maxWidth: 260,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 6,
+                    backgroundColor: theme.colors.foreground,
+                  }}
+                >
+                  <Text style={{ color: theme.colors.surface0, fontSize: 12 }}>
+                    {title}
+                  </Text>
+                </View>
+              )}
             </View>
           );
         })
