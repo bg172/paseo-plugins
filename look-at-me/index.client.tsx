@@ -303,15 +303,14 @@ function FinishedRow({ count }: { count: number }) {
     };
     return (
       <View style={{ alignItems: "center", paddingVertical: 12 }}>
-        <View style={{ position: "relative" }}>
+        <View style={{ position: "relative", width: "100%", alignItems: "center" }}>
           {count > 0 && (
             <View
               style={{
                 position: "absolute",
-                right: "100%",
+                left: 8,
                 top: 0,
-                marginRight: 12,
-                width: 150,
+                maxWidth: 100,
                 alignItems: "flex-start",
               }}
             >
@@ -343,7 +342,7 @@ function FinishedRow({ count }: { count: number }) {
                       </Text>
                     </Pressable>
                     <Text
-                      style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left", maxWidth: 110 }}
+                      style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left", maxWidth: 70 }}
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
@@ -356,6 +355,7 @@ function FinishedRow({ count }: { count: number }) {
               )}
             </View>
           )}
+          <View style={{ position: "relative" }}>
           {count > 0 && (
             <Pressable
               onPress={openNext}
@@ -390,6 +390,7 @@ function FinishedRow({ count }: { count: number }) {
               </Text>
             </Pressable>
           )}
+          </View>
         </View>
         {count > 0 && nextId && (
         <View style={{ marginTop: 8, alignItems: "center", gap: 4 }}>

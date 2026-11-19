@@ -1,6 +1,6 @@
 {
   "name": "look-at-me",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "files": [
     "paseo-plugin.json",
     "OVERVIEW.md",
