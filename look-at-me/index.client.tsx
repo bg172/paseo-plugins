@@ -459,42 +459,6 @@ function FinishedRow({ count }: { count: number }) {
               </Text>
             </View>
           )}
-          {count > 0 && tip && (
-            <View
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: 126,
-                alignItems: "center",
-                zIndex: 10,
-                elevation: 10,
-                // Pointer-transparent like the title bubble: never steal the
-                // hover from the button below it.
-                pointerEvents: "none",
-              }}
-            >
-              <View
-                style={{
-                  maxWidth: 240,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  borderRadius: 6,
-                  backgroundColor: theme.colors.foreground,
-                }}
-              >
-                <Text
-                  style={{
-                    color: theme.colors.surface0,
-                    fontSize: 12,
-                    textAlign: "center",
-                  }}
-                >
-                  {tip}
-                </Text>
-              </View>
-            </View>
-          )}
         </View>
         {count > 0 && nextId && (
         <View style={{ marginTop: 8, alignItems: "center", gap: 4 }}>
@@ -515,6 +479,29 @@ function FinishedRow({ count }: { count: number }) {
             </Text>
           </Pressable>
         </View>
+        )}
+        {count > 0 && tip && (
+          <View style={{ marginTop: 6, alignItems: "center" }}>
+            <View
+              style={{
+                maxWidth: 240,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 6,
+                backgroundColor: theme.colors.foreground,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.colors.surface0,
+                  fontSize: 12,
+                  textAlign: "center",
+                }}
+              >
+                {tip}
+              </Text>
+            </View>
+          </View>
         )}
       </View>
     );
