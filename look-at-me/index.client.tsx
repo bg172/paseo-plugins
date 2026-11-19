@@ -217,17 +217,6 @@ function short7(id: string): string {
   return id.slice(0, 7);
 }
 
-// Hover handlers for capped title lines: hovering reveals the full title in
-// a bubble. Passed via spread (not inline props) so hosts whose typings lack
-// hover handlers still typecheck; on touch platforms hover never fires and
-// the handlers are inert, with full titles available in Settings / the list.
-function hoverProps(id: string, setHovered: (id: string | null) => void) {
-  return {
-    onHoverIn: () => setHovered(id),
-    onHoverOut: () => setHovered(null),
-  };
-}
-
 // Recency order: most recent first, then older ones.
 let clickSeq = 0;
 
@@ -343,7 +332,6 @@ function FinishedRow({ count }: { count: number }) {
                   <View
                     key={id}
                     style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-                    {...hoverProps(id, setHoveredId)}
                   >
                     <Pressable
                       onPress={() => unignoreAgent(id)}
@@ -354,13 +342,18 @@ function FinishedRow({ count }: { count: number }) {
                         ✕
                       </Text>
                     </Pressable>
-                    <Text
-                      style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left", maxWidth: 70 }}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
+                    <Pressable
+                      onHoverIn={() => setHoveredId(id)}
+                      onHoverOut={() => setHoveredId(null)}
                     >
-                      {title ? `${short7(id)} ${title}` : short7(id)}
-                    </Text>
+                      <Text
+                        style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left", maxWidth: 70 }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {title ? `${short7(id)} ${title}` : short7(id)}
+                      </Text>
+                    </Pressable>
                     {hoveredId === id && title && (
                       <View
                         style={{
@@ -638,7 +631,6 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
             <View
               key={id}
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              {...hoverProps(id, setHoveredId)}
             >
               <Pressable
                 onPress={() => unignoreAgent(id)}
@@ -649,22 +641,28 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
                   ✕
                 </Text>
               </Pressable>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{ color: theme.colors.foreground, fontSize: 16 }}
-                  numberOfLines={1}
-                >
-                  {short7(id)}
-                </Text>
-                {title && (
+              <Pressable
+                style={{ flex: 1 }}
+                onHoverIn={() => setHoveredId(id)}
+                onHoverOut={() => setHoveredId(null)}
+              >
+                <View>
                   <Text
-                    style={{ color: theme.colors.foreground, fontSize: 12 }}
+                    style={{ color: theme.colors.foreground, fontSize: 16 }}
                     numberOfLines={1}
                   >
-                    {title}
+                    {short7(id)}
                   </Text>
-                )}
-              </View>
+                  {title && (
+                    <Text
+                      style={{ color: theme.colors.foreground, fontSize: 12 }}
+                      numberOfLines={1}
+                    >
+                      {title}
+                    </Text>
+                  )}
+                </View>
+              </Pressable>
               {hoveredId === id && title && (
                 <View
                   style={{
