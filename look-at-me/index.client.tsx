@@ -411,6 +411,9 @@ function FinishedRow({ count }: { count: number }) {
                 maxWidth: 220,
                 zIndex: 10,
                 elevation: 10,
+                // Pointer-transparent: the bubble must never steal the hover
+                // from the title below it, or hover in/out oscillates (blink).
+                pointerEvents: "none",
                 paddingHorizontal: 8,
                 paddingVertical: 4,
                 borderRadius: 6,
