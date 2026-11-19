@@ -395,7 +395,7 @@ function FinishedRow({ count }: { count: number }) {
               onPress={clearNext}
               accessibilityRole="button"
               accessibilityLabel="Clear this waiting notification"
-              style={{ position: "absolute", top: 0, right: 0, padding: 0, transform: [{ translateX: "75%" }] }}
+              style={{ position: "absolute", top: 0, right: -60, padding: 0 }}
             >
               <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
                 ✕ clear this
@@ -407,7 +407,7 @@ function FinishedRow({ count }: { count: number }) {
               onPress={clearAll}
               accessibilityRole="button"
               accessibilityLabel="Clear all waiting notifications"
-              style={{ position: "absolute", top: 22, right: 0, padding: 0, transform: [{ translateX: "75%" }] }}
+              style={{ position: "absolute", top: 22, right: -60, padding: 0 }}
             >
               <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
                 ✕ clear all
@@ -442,7 +442,7 @@ function FinishedRow({ count }: { count: number }) {
         {count > 0 && nextId && (
         <View style={{ marginTop: 8, alignItems: "center", gap: 4 }}>
           <Pressable onPress={openNext}>
-            <Text style={{ color: theme.colors.foreground }}>
+            <Text style={{ color: theme.colors.foreground, textAlign: "center" }}>
               {nextTitle ? `${nextTitle} — tap to open` : (count === 1 ? "session waiting — tap to open" : "sessions waiting — tap to open")}
             </Text>
           </Pressable>
@@ -451,7 +451,7 @@ function FinishedRow({ count }: { count: number }) {
             accessibilityRole="button"
             accessibilityLabel={`Ignore this session's updates (${nextTitle ?? shortId(nextId)})`}
           >
-            <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+            <Text style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "center" }}>
               🧠 ignore this session's updates
             </Text>
           </Pressable>
