@@ -418,8 +418,8 @@ function FinishedRow({ count }: { count: number }) {
                 left: -50,
                 width: 220,
                 alignItems: "center",
-                zIndex: 10,
-                elevation: 10,
+                zIndex: 50,
+                elevation: 50,
                 pointerEvents: "none",
               }}
             >
@@ -466,8 +466,8 @@ function FinishedRow({ count }: { count: number }) {
                 right: -60,
                 width: 160,
                 alignItems: "flex-end",
-                zIndex: 10,
-                elevation: 10,
+                zIndex: 50,
+                elevation: 50,
                 pointerEvents: "none",
               }}
             >
@@ -514,8 +514,8 @@ function FinishedRow({ count }: { count: number }) {
                 right: -60,
                 width: 160,
                 alignItems: "flex-end",
-                zIndex: 10,
-                elevation: 10,
+                zIndex: 50,
+                elevation: 50,
                 pointerEvents: "none",
               }}
             >
@@ -549,8 +549,8 @@ function FinishedRow({ count }: { count: number }) {
                 // Label row ("Ignoring:") shifted the lines down by ~22px.
                 top: 46 + hoveredIndex * 22,
                 maxWidth: 220,
-                zIndex: 10,
-                elevation: 10,
+                zIndex: 50,
+                elevation: 50,
                 // Pointer-transparent: the bubble must never steal the hover
                 // from the title below it, or hover in/out oscillates (blink).
                 pointerEvents: "none",
@@ -594,8 +594,8 @@ function FinishedRow({ count }: { count: number }) {
                 left: 0,
                 right: 0,
                 alignItems: "center",
-                zIndex: 10,
-                elevation: 10,
+                zIndex: 50,
+                elevation: 50,
                 pointerEvents: "none",
               }}
             >
@@ -615,7 +615,7 @@ function FinishedRow({ count }: { count: number }) {
                     textAlign: "center",
                   }}
                 >
-                  mute this session — never notify about it again
+                  mute this session — its notifications stay hidden
                 </Text>
               </View>
             </View>
