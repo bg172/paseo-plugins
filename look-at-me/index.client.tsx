@@ -307,6 +307,16 @@ function FinishedRow({ count }: { count: number }) {
       bumpWaiting();
       requestSidebarRefresh?.();
     };
+    const jumpTo = (agentId: string) => {
+      // Same road the circle takes: open the list screen with this session
+      // as its target and let it auto-open the agent. The session stays
+      // ignored — this is a one-time peek, not an un-ignore.
+      clickSeq += 1;
+      openScreen({
+        screenId: "look-at-me-list",
+        params: { agent: agentId, n: String(clickSeq) },
+      });
+    };
     return (
       <View style={{ alignItems: "center", paddingVertical: 12 }}>
         <View style={{ position: "relative", width: "100%", alignItems: "center" }}>
@@ -348,8 +358,11 @@ function FinishedRow({ count }: { count: number }) {
                       </Text>
                     </Pressable>
                     <Pressable
+                      onPress={() => jumpTo(id)}
                       onHoverIn={() => setHoveredId(id)}
                       onHoverOut={() => setHoveredId(null)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open session ${title ?? short7(id)}`}
                     >
                       <Text
                         style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left", maxWidth: 100 }}
@@ -456,7 +469,10 @@ function DoneListScreen({ navigation, theme, params }: PluginScreenProps) {
   // Falls back to the legacy single-entry auto-open when opened bare.
   const paramAgent = typeof params.agent === "string" ? params.agent : null;
   const requestedId =
-    paramAgent && (recentConsumed.includes(paramAgent) || waiting.has(paramAgent))
+    paramAgent &&
+    (recentConsumed.includes(paramAgent) ||
+      waiting.has(paramAgent) ||
+      ignored.has(paramAgent))
       ? paramAgent
       : null;
   const singleKey =
@@ -549,7 +565,7 @@ function DoneListScreen({ navigation, theme, params }: PluginScreenProps) {
   );
 }
 
-function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
+function IgnoredSettingsScreen({ theme, navigation }: PluginSurfaceProps) {
   const settings = useSettings(ignoredSettings);
   useSyncExternalStore(subscribeIgnored, getIgnoredVersion);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -652,8 +668,11 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
               </Pressable>
               <Pressable
                 style={{ flex: 1 }}
+                onPress={() => navigation?.openAgent({ agentId: id })}
                 onHoverIn={() => setHoveredId(id)}
                 onHoverOut={() => setHoveredId(null)}
+                accessibilityRole="button"
+                accessibilityLabel={`Open session ${title ?? short7(id)}`}
               >
                 <View>
                   <Text
