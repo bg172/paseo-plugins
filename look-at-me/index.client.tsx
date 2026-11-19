@@ -303,19 +303,28 @@ function FinishedRow({ count }: { count: number }) {
     return (
       <View style={{ alignItems: "center", paddingVertical: 12 }}>
         <View style={{ position: "relative" }}>
-          {count > 0 && ignoredIds.length > 0 && (
+          {count > 0 && (
             <View
               style={{
                 position: "absolute",
                 right: "100%",
-                // Second line: the first line belongs to "clear all".
-                top: 22,
+                top: 0,
                 marginRight: 12,
-                maxWidth: 150,
-                gap: 6,
+                width: 150,
                 alignItems: "flex-start",
               }}
             >
+              <Pressable
+                onPress={clearAll}
+                accessibilityRole="button"
+                accessibilityLabel="Clear all waiting notifications"
+              >
+                <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                  ✕ clear all
+                </Text>
+              </Pressable>
+              {ignoredIds.length > 0 && (
+                <View style={{ marginTop: 6, gap: 6, alignItems: "flex-start" }}>
               {ignoredIds.map((id) => {
                 const title = titles.get(id) ?? null;
                 return (
@@ -342,6 +351,8 @@ function FinishedRow({ count }: { count: number }) {
                   </View>
                 );
               })}
+                </View>
+              )}
             </View>
           )}
           {count > 0 && (
@@ -364,18 +375,6 @@ function FinishedRow({ count }: { count: number }) {
                   {count}
                 </Text>
               </View>
-            </Pressable>
-          )}
-          {count > 0 && (
-            <Pressable
-              onPress={clearAll}
-              accessibilityRole="button"
-              accessibilityLabel="Clear all waiting notifications"
-              style={{ position: "absolute", top: 0, left: 0, padding: 0, transform: [{ translateX: "-75%" }] }}
-            >
-              <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
-                ✕ clear all
-              </Text>
             </Pressable>
           )}
           {count > 0 && (
