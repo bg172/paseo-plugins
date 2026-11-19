@@ -311,7 +311,7 @@ function FinishedRow({ count }: { count: number }) {
                 position: "absolute",
                 left: 8,
                 top: 0,
-                maxWidth: 100,
+                maxWidth: 130,
                 alignItems: "flex-start",
               }}
             >
@@ -347,7 +347,7 @@ function FinishedRow({ count }: { count: number }) {
                       onHoverOut={() => setHoveredId(null)}
                     >
                       <Text
-                        style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left", maxWidth: 70 }}
+                        style={{ color: theme.colors.foreground, fontSize: 12, textAlign: "left", maxWidth: 100 }}
                         numberOfLines={1}
                         ellipsizeMode="tail"
                       >
