@@ -1,4 +1,4 @@
-import { defineSettings } from "@getpaseo/plugin";
+import { defineSettings, settingsRpc } from "@getpaseo/plugin";
 import { z } from "zod";
 
 // Persisted mirror of the ignore list: shown and editable in the plugin's
@@ -11,3 +11,7 @@ export const ignoredSettings = defineSettings({
   version: 1,
   schema: z.object({ ignoredIds: z.array(z.string()).default([]) }),
 });
+
+// RPC contracts for the same store (read used at watcher startup to restore
+// the ignore list without opening the Settings screen).
+export const ignoredSettingsRpc = settingsRpc("look-at-me-ignored");

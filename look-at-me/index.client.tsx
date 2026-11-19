@@ -7,6 +7,7 @@ import type {
 } from "@getpaseo/plugin/client";
 import { useSettings } from "@getpaseo/plugin/client";
 import { ignoredSettings } from "./shared/ignored-settings.js";
+import { ignoredSettingsRpc } from "./shared/ignored-settings.js";
 import { Pressable, Text, View } from "react-native";
 
 interface WatchedAgent {
@@ -543,16 +544,17 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
     const stored = settings.values.ignoredIds;
     const union = [...new Set([...stored, ...ignored])];
     let changed = false;
+    let waitingChanged = false;
     for (const id of union) {
       if (!ignored.has(id)) {
         ignored.add(id);
+        if (waiting.delete(id)) waitingChanged = true;
         changed = true;
       }
     }
-    if (changed) {
-      bumpIgnored();
-      requestSidebarRefresh?.();
-    }
+    if (changed) bumpIgnored();
+    if (waitingChanged) bumpWaiting();
+    if (changed || waitingChanged) requestSidebarRefresh?.();
     const needsSave =
       union.length !== stored.length || union.some((id, i) => stored[i] !== id);
     if (needsSave) {
@@ -774,7 +776,36 @@ export default function contribute(client: PluginClientContext) {
     }
   }
 
+  async function restoreIgnored(): Promise<void> {
+    try {
+      const result = await client.rpc(ignoredSettingsRpc.read, {});
+      if (result.status !== "ready") return;
+      const values = result.values as unknown as { ignoredIds?: unknown };
+      if (!Array.isArray(values.ignoredIds)) return;
+      let changed = false;
+      let waitingChanged = false;
+      for (const id of values.ignoredIds) {
+        if (typeof id !== "string" || ignored.has(id)) continue;
+        ignored.add(id);
+        seen.delete(id);
+        prompts.delete(id);
+        consumed.delete(id);
+        if (waiting.delete(id)) waitingChanged = true;
+        changed = true;
+      }
+      if (changed) bumpIgnored();
+      if (waitingChanged) bumpWaiting();
+      if (changed || waitingChanged) refreshSidebar();
+    } catch {
+      // Older host without settings RPCs, or store unreadable: memory only.
+    }
+  }
+
   async function watch(): Promise<void> {
+    // Restore the persisted ignore list before observing: without this, an
+    // app restart wipes in-memory ignores and they silently stop working
+    // until the Settings screen happens to open.
+    await restoreIgnored();
     let directory;
     try {
       directory = await client.paseo.agents.list({
