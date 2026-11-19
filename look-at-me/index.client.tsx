@@ -339,7 +339,7 @@ function FinishedRow({ count }: { count: number }) {
                   fontWeight: "600",
                 }}
               >
-                Ignoring:
+                Muted:
               </Text>
               {ignoredIds.map((id) => {
                 const title = titles.get(id) ?? null;
@@ -546,7 +546,7 @@ function FinishedRow({ count }: { count: number }) {
               style={{
                 position: "absolute",
                 left: 8,
-                // Label row ("Ignoring:") shifted the lines down by ~22px.
+                // Label row ("Muted:") shifted the lines down by ~22px.
                 top: 46 + hoveredIndex * 22,
                 maxWidth: 220,
                 zIndex: 50,

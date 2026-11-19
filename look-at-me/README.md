@@ -12,7 +12,7 @@ Sending a new prompt in a session clears its entry. Each waiting session in
 the list has an "ignore this session's updates" action: ignored sessions
 never raise the circle again, appear with ✕ first, then their first 7 id
 symbols plus title, left-aligned in a list left of the circle (shown only
-while the circle is visible), headed by an "Ignoring:" label, and can be
+while the circle is visible), headed by a "Muted:" label, and can be
 un-ignored with the ✕ next to them. Hovering any button shows a tooltip
 explaining it (the circle: "jump to the most recent session update"; a capped
 title: its full id and title).
