@@ -267,6 +267,11 @@ function FinishedRow({ count }: { count: number }) {
     useSyncExternalStore(subscribeIgnored, getIgnoredVersion);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
     const ignoredIds = sortedIgnoredIds();
+    // Tooltip placement: rendered after the circle in tree order so it
+    // paints above it on every renderer (native paint order ignores zIndex).
+    const hoveredIndex = hoveredId ? ignoredIds.indexOf(hoveredId) : -1;
+    const hoveredTitle =
+      hoveredId && hoveredIndex >= 0 ? (titles.get(hoveredId) ?? null) : null;
     // The session the next circle click would open. Shown with its own
     // ignore action so filtering never requires opening the list screen
     // first (a single waiting entry auto-opens the agent on click).
@@ -354,26 +359,6 @@ function FinishedRow({ count }: { count: number }) {
                         {title ? `${short7(id)} ${title}` : short7(id)}
                       </Text>
                     </Pressable>
-                    {hoveredId === id && title && (
-                      <View
-                        style={{
-                          position: "absolute",
-                          top: 20,
-                          left: 0,
-                          zIndex: 10,
-                          elevation: 10,
-                          maxWidth: 220,
-                          paddingHorizontal: 8,
-                          paddingVertical: 4,
-                          borderRadius: 6,
-                          backgroundColor: theme.colors.foreground,
-                        }}
-                      >
-                        <Text style={{ color: theme.colors.surface0, fontSize: 12 }}>
-                          {`${short7(id)} ${title}`}
-                        </Text>
-                      </View>
-                    )}
                   </View>
                 );
               })}
@@ -417,6 +402,26 @@ function FinishedRow({ count }: { count: number }) {
             </Pressable>
           )}
           </View>
+          {count > 0 && hoveredIndex >= 0 && hoveredTitle && hoveredId && (
+            <View
+              style={{
+                position: "absolute",
+                left: 8,
+                top: 24 + hoveredIndex * 22,
+                maxWidth: 220,
+                zIndex: 10,
+                elevation: 10,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 6,
+                backgroundColor: theme.colors.foreground,
+              }}
+            >
+              <Text style={{ color: theme.colors.surface0, fontSize: 12 }}>
+                {`${short7(hoveredId)} ${hoveredTitle}`}
+              </Text>
+            </View>
+          )}
         </View>
         {count > 0 && nextId && (
         <View style={{ marginTop: 8, alignItems: "center", gap: 4 }}>
@@ -650,40 +655,20 @@ function IgnoredSettingsScreen({ theme }: PluginSurfaceProps) {
                 <View>
                   <Text
                     style={{ color: theme.colors.foreground, fontSize: 16 }}
-                    numberOfLines={1}
+                    numberOfLines={hoveredId === id ? undefined : 1}
                   >
                     {short7(id)}
                   </Text>
                   {title && (
                     <Text
                       style={{ color: theme.colors.foreground, fontSize: 12 }}
-                      numberOfLines={1}
+                      numberOfLines={hoveredId === id ? undefined : 1}
                     >
                       {title}
                     </Text>
                   )}
                 </View>
               </Pressable>
-              {hoveredId === id && title && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 40,
-                    left: 0,
-                    zIndex: 10,
-                    elevation: 10,
-                    maxWidth: 260,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 6,
-                    backgroundColor: theme.colors.foreground,
-                  }}
-                >
-                  <Text style={{ color: theme.colors.surface0, fontSize: 12 }}>
-                    {title}
-                  </Text>
-                </View>
-              )}
             </View>
           );
         })
