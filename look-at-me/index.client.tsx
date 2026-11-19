@@ -320,27 +320,17 @@ function FinishedRow({ count }: { count: number }) {
     return (
       <View style={{ alignItems: "center", paddingVertical: 12 }}>
         <View style={{ position: "relative", width: "100%", alignItems: "center" }}>
-          {count > 0 && (
+          {count > 0 && ignoredIds.length > 0 && (
             <View
               style={{
                 position: "absolute",
                 left: 8,
                 top: 0,
                 maxWidth: 130,
+                gap: 6,
                 alignItems: "flex-start",
               }}
             >
-              <Pressable
-                onPress={clearAll}
-                accessibilityRole="button"
-                accessibilityLabel="Clear all waiting notifications"
-              >
-                <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
-                  ✕ clear all
-                </Text>
-              </Pressable>
-              {ignoredIds.length > 0 && (
-                <View style={{ marginTop: 6, gap: 6, alignItems: "flex-start" }}>
               {ignoredIds.map((id) => {
                 const title = titles.get(id) ?? null;
                 return (
@@ -375,8 +365,6 @@ function FinishedRow({ count }: { count: number }) {
                   </View>
                 );
               })}
-                </View>
-              )}
             </View>
           )}
           <View style={{ position: "relative" }}>
@@ -411,6 +399,18 @@ function FinishedRow({ count }: { count: number }) {
             >
               <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
                 ✕ clear this
+              </Text>
+            </Pressable>
+          )}
+          {count > 0 && (
+            <Pressable
+              onPress={clearAll}
+              accessibilityRole="button"
+              accessibilityLabel="Clear all waiting notifications"
+              style={{ position: "absolute", top: 22, right: 0, padding: 0, transform: [{ translateX: "75%" }] }}
+            >
+              <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                ✕ clear all
               </Text>
             </Pressable>
           )}
