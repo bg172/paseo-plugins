@@ -319,14 +319,42 @@ function FinishedRow({ count }: { count: number }) {
       });
     };
     return (
-      <View style={{ alignItems: "center", paddingVertical: 12 }}>
-        <View style={{ position: "relative", width: "100%", alignItems: "center" }}>
+      // Zero-height floating footer: the host renders this slot between two
+      // core token-usage bars, so anything in-flow would wedge them apart.
+      // The overlay straddles the slot (circle centered on it) and floats
+      // above both bars instead of splitting them. box-none lets clicks pass
+      // through to the bars everywhere except on our own buttons.
+      <View
+        style={{
+          position: "relative",
+          width: "100%",
+          height: 0,
+          alignItems: "center",
+          overflow: "visible",
+          zIndex: 50,
+          elevation: 50,
+          pointerEvents: "box-none",
+        }}
+      >
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            alignItems: "center",
+            overflow: "visible",
+            pointerEvents: "box-none",
+          }}
+        >
           {count > 0 && ignoredIds.length > 0 && (
             <View
               style={{
                 position: "absolute",
                 left: 8,
-                top: 0,
+                // Pulled up with the overlay: list sits left of the circle,
+                // straddling the slot like the circle does.
+                top: -56,
                 maxWidth: 130,
                 gap: 6,
                 alignItems: "flex-start",
@@ -383,9 +411,35 @@ function FinishedRow({ count }: { count: number }) {
                   </View>
                 );
               })}
+              {count > 0 && hoveredIndex >= 0 && hoveredId && (hoveredTitle || tipKey === "unignore") && (
+                <View
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    // Label row ("Muted:") shifted the lines down by ~22px.
+                    top: 46 + hoveredIndex * 22,
+                    maxWidth: 220,
+                    zIndex: 50,
+                    elevation: 50,
+                    // Pointer-transparent: the bubble must never steal the hover
+                    // from the title below it, or hover in/out oscillates (blink).
+                    pointerEvents: "none",
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 6,
+                    backgroundColor: theme.colors.foreground,
+                  }}
+                >
+                  <Text style={{ color: theme.colors.surface0, fontSize: 12 }}>
+                    {tipKey === "unignore"
+                      ? "stop ignoring — its notifications will show again"
+                      : `${short7(hoveredId)} ${hoveredTitle ?? ""}`}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
-          <View style={{ position: "relative" }}>
+          <View style={{ position: "relative", marginTop: -60 }}>
           {count > 0 && (
             <Pressable
               onPress={openNext}
@@ -414,7 +468,9 @@ function FinishedRow({ count }: { count: number }) {
             <View
               style={{
                 position: "absolute",
-                top: 124,
+                // Above the circle (over the upper token bar, transient on
+                // hover): below it would cover the tap-to-open line.
+                top: -30,
                 left: -50,
                 width: 220,
                 alignItems: "center",
@@ -541,34 +597,7 @@ function FinishedRow({ count }: { count: number }) {
             </View>
           )}
           </View>
-          {count > 0 && hoveredIndex >= 0 && hoveredId && (hoveredTitle || tipKey === "unignore") && (
-            <View
-              style={{
-                position: "absolute",
-                left: 8,
-                // Label row ("Muted:") shifted the lines down by ~22px.
-                top: 46 + hoveredIndex * 22,
-                maxWidth: 220,
-                zIndex: 50,
-                elevation: 50,
-                // Pointer-transparent: the bubble must never steal the hover
-                // from the title below it, or hover in/out oscillates (blink).
-                pointerEvents: "none",
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 6,
-                backgroundColor: theme.colors.foreground,
-              }}
-            >
-              <Text style={{ color: theme.colors.surface0, fontSize: 12 }}>
-                {tipKey === "unignore"
-                  ? "stop ignoring — its notifications will show again"
-                  : `${short7(hoveredId)} ${hoveredTitle ?? ""}`}
-              </Text>
-            </View>
-          )}
-        </View>
-        {count > 0 && nextId && (
+          {count > 0 && nextId && (
         <View style={{ marginTop: 8, alignItems: "center", gap: 4, position: "relative" }}>
           <Pressable onPress={openNext}>
             <Text style={{ color: theme.colors.foreground, textAlign: "center" }}>
@@ -622,6 +651,7 @@ function FinishedRow({ count }: { count: number }) {
           )}
         </View>
         )}
+        </View>
       </View>
     );
   };
