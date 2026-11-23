@@ -352,9 +352,9 @@ function FinishedRow({ count }: { count: number }) {
               style={{
                 position: "absolute",
                 left: 8,
-                // Pulled up with the overlay: list sits left of the circle,
-                // straddling the slot like the circle does.
-                top: -56,
+                // Aligned with the circle top: the overlay floats above the
+                // token bars, so the list sits over the workspace area.
+                top: -221,
                 maxWidth: 130,
                 gap: 6,
                 alignItems: "flex-start",
@@ -439,7 +439,10 @@ function FinishedRow({ count }: { count: number }) {
               )}
             </View>
           )}
-          <View style={{ position: "relative", marginTop: -60 }}>
+          <View style={{ position: "relative", marginTop: -225 }}>
+            {/* Circle top sits ~225 above the slot: the 120 circle plus the
+                tap-to-open/ignore lines below it all clear the upper token
+                bar (~30px) and float over the workspace list instead. */}
           {count > 0 && (
             <Pressable
               onPress={openNext}
