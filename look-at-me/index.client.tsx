@@ -339,12 +339,17 @@ function FinishedRow({ count }: { count: number }) {
         <View
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
+            // Solid panel floating above the token bars: hides the workspace
+            // rows behind it instead of letting them show through.
+            top: -235,
+            left: 4,
+            right: 4,
             alignItems: "center",
             overflow: "visible",
             pointerEvents: "box-none",
+            padding: 8,
+            borderRadius: 12,
+            backgroundColor: theme.colors.surface0,
           }}
         >
           {count > 0 && ignoredIds.length > 0 && (
@@ -352,9 +357,8 @@ function FinishedRow({ count }: { count: number }) {
               style={{
                 position: "absolute",
                 left: 8,
-                // Aligned with the circle top: the overlay floats above the
-                // token bars, so the list sits over the workspace area.
-                top: -221,
+                // Top-left inside the panel, next to the circle.
+                top: 8,
                 maxWidth: 130,
                 gap: 6,
                 alignItems: "flex-start",
@@ -439,10 +443,9 @@ function FinishedRow({ count }: { count: number }) {
               )}
             </View>
           )}
-          <View style={{ position: "relative", marginTop: -225 }}>
-            {/* Circle top sits ~225 above the slot: the 120 circle plus the
-                tap-to-open/ignore lines below it all clear the upper token
-                bar (~30px) and float over the workspace list instead. */}
+          <View style={{ position: "relative" }}>
+            {/* In-flow inside the panel: circle on top, tap-to-open and
+                mute lines below it. */}
           {count > 0 && (
             <Pressable
               onPress={openNext}
