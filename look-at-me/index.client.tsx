@@ -321,9 +321,9 @@ function FinishedRow({ count }: { count: number }) {
     return (
       // Zero-height floating footer: the host renders this slot between two
       // core token-usage bars, so anything in-flow would wedge them apart.
-      // The overlay straddles the slot (circle centered on it) and floats
-      // above both bars instead of splitting them. box-none lets clicks pass
-      // through to the bars everywhere except on our own buttons.
+      // The panel is bottom-anchored above the upper bar (both bars stay
+      // visible); box-none lets clicks pass through everywhere except on
+      // our own buttons.
       <View
         style={{
           position: "relative",
@@ -336,15 +336,15 @@ function FinishedRow({ count }: { count: number }) {
           pointerEvents: "box-none",
         }}
       >
+        {count > 0 && (
         <View
           style={{
             position: "absolute",
-            // Solid panel floating above the token bars: hides the workspace
-            // rows behind it instead of letting them show through. Auto
-            // height (~184) ending just above the upper token bar, so both
-            // bars stay visible with (near-)0 distance; content stays
-            // top-aligned.
-            top: -218,
+            // Solid panel bottom-anchored above the token bars: the bottom
+            // edge stays fixed, so taller content (wrapped titles on narrow
+            // sidebars) grows upward instead of down into the bars. Hidden
+            // entirely when there is nothing to show.
+            bottom: 34,
             left: 4,
             right: 4,
             alignItems: "center",
@@ -663,6 +663,7 @@ function FinishedRow({ count }: { count: number }) {
         </View>
         )}
         </View>
+        )}
       </View>
     );
   };
