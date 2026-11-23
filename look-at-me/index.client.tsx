@@ -340,8 +340,12 @@ function FinishedRow({ count }: { count: number }) {
           style={{
             position: "absolute",
             // Solid panel floating above the token bars: hides the workspace
-            // rows behind it instead of letting them show through.
-            top: -235,
+            // rows behind it instead of letting them show through. Fixed
+            // height reaches exactly down to the slot, so the panel sits
+            // flush on the token bars with 0 distance (square bottom corners
+            // for a clean attach); content stays top-aligned.
+            top: -210,
+            height: 210,
             left: 4,
             right: 4,
             alignItems: "center",
@@ -349,6 +353,8 @@ function FinishedRow({ count }: { count: number }) {
             pointerEvents: "box-none",
             padding: 8,
             borderRadius: 12,
+            borderBottomLeftRadius: 0,
+            borderBottomRightRadius: 0,
             backgroundColor: theme.colors.surface0,
           }}
         >
